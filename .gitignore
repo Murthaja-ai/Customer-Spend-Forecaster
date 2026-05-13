@@ -1,0 +1,10 @@
+# Environments
+venv/
+__pycache__/
+
+# Large Data Files (GitHub rejects files over 100MB)
+data/raw/
+data/processed/
+
+# System Files
+.DS_Store
