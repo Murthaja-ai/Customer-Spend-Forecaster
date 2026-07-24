@@ -7,8 +7,8 @@ import joblib
 st.set_page_config(page_title="AI Financial Forecaster", layout="wide", page_icon="🏦")
 
 # --- THE BUSINESS-FRIENDLY SIDEBAR ---
-st.sidebar.title("📊 Project Info")
-st.sidebar.write("**Architecture:** K-Means + XGBoost")
+st.sidebar.title("🏦 AI Banking Decision Engine")
+st.sidebar.write("**Architecture:** Behavioral Segmentation (K-Means) & Future Spend Forecasting (XGBoost)")
 st.sidebar.write("**Dataset:** Behavioral Credit Card Transactions")
 st.sidebar.write("**Target:** Forecast Customer Spend Change")
 st.sidebar.divider()
