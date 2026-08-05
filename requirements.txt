@@ -4,3 +4,4 @@ numpy
 scikit-learn
 xgboost
 joblib
+starlette<1.4.0
