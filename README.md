@@ -37,12 +37,14 @@ Banks and marketing teams can use this AI engine to:
 
 This project demonstrates an end-to-end Data Science and Machine Learning lifecycle:
 
-### 1. Data Engineering & Leakage Prevention
-*   **Temporal Feature/Target Design:** To simulate a real-world forecasting environment and prevent temporal leakage, features were derived exclusively from 2019 transaction history, while the target represents customer spending during the Jan-Jun 2020 target period. For predictive evaluation, customers were split into an 80/20 training/testing hold-out, with 5-fold cross-validation performed on the training set.
-*   **RFM Feature Engineering:** Converted 1.29 million raw transaction rows into distinct customer profiles using Recency, Frequency, and Monetary metrics (e.g., *Spend Volatility*, *Average Transaction Gap*). Demographic bias (age, gender) was deliberately removed to ensure legally compliant, behavior-only predictions.
+### 1. Data Engineering & Feature Engineering
+*   **Temporal Feature/Target Design:** To simulate a real-world forecasting environment, features were derived exclusively from 2019 transaction history, while the target represents customer spending during the Jan-Jun 2020 target period. For predictive evaluation, customers were split into an 80/20 training/testing hold-out, with 5-fold cross-validation performed on the training set.
+*   **Behavioral Feature Engineering:** Converted 1.29 million raw transaction rows into 908 customer profiles using frequency, monetary and timing metrics (e.g., *Spend Volatility*, *Average Transaction Gap*). Demographic features (age, gender) were deliberately excluded so predictions use behavior only.
 
 ### 2. Behavioral Segmentation (K-Means)
-Using **K-Means Clustering** (validated via Silhouette Scores and PCA dimensionality reduction), the customer base was segmented into 5 actionable business personas:
+Using **K-Means Clustering** (k=5 chosen for interpretability; silhouette peaked at k=8; PCA used for 2D visualization), the customer base was segmented into 5 actionable business personas.
+
+K-Means was fitted on all 908 customers before the train/test split (unsupervised, target not used); the persona flags are model inputs.
 
 | Persona | Description |
 | :--- | :--- |
@@ -56,7 +58,7 @@ Using **K-Means Clustering** (validated via Silhouette Scores and PCA dimensiona
 
 ## 🧠 Predictive Modeling (XGBoost)
 
-Trained an **XGBoost Regression** model to predict future spending momentum. Instead of predicting absolute future dollars (which artificially biases the model toward wealthy users), the model targets the **Logarithmic Growth Ratio**. This normalizes the baseline, allowing the AI to successfully flag a millionaire dropping their spend by 50% alongside a college student growing their spend by 200%.
+Trained an **XGBoost Regression** model to predict future spending momentum. Instead of predicting absolute future dollars (which artificially biases the model toward wealthy users), the model targets the **Logarithmic Growth Ratio**. Predicting a ratio instead of absolute dollars puts customers with very different spend levels on the same scale.
 
 | Model | CV MAE (Log Space) | Test MAE (Growth Ratio Error) | Test R² |
 | :--- | :---: | :---: | :---: |
@@ -88,7 +90,7 @@ Model interpretability is important in financial decision support systems. **SHA
 
 The pipeline is deployed via a **Streamlit** web application, bridging the gap between machine learning math and business intelligence.
 
-*   **Annualized Run-Rate Optimization:** Because the model predicts a 6-month window but historical data covers 12 months, the deployment layer mathematically annualizes the forecast. This allows the system to generate intuitive, highly accurate 1.0 baseline business thresholds:
+*   **Annualized Run-Rate Optimization:** Because the model predicts a 6-month window but historical data covers 12 months, the deployment layer mathematically annualizes the forecast. This allows the system to generate intuitive business thresholds around a 1.0 growth ratio:
     *   🚨 **< 0.95 (Decline):** Triggers immediate Retention Marketing.
     *   📈 **> 1.05 (Growth):** Triggers Premium Upgrade Offers.
     *   ⚖️ **Stable:** Recommends continued engagement monitoring.
@@ -106,6 +108,14 @@ The pipeline is deployed via a **Streamlit** web application, bridging the gap b
 
 ---
 
+## ⚠️ Limitations
+
+* **Modest predictive performance:** Test R² is approximately 0.14 on the held-out test set.
+* **Evaluation split:** Predictive evaluation uses a random 80/20 customer-level hold-out.
+* **Persona preprocessing:** K-Means personas were fitted before the predictive train/test split; this is a preprocessing limitation, although the clustering is unsupervised and does not use the future target.
+* **Dataset:** The project uses a simulated dataset.
+* **Bulk prediction:** The Bulk CSV tab currently previews uploaded data; batch prediction is planned as a future enhancement.
+
 ## 📂 Repository Structure
 
 ```text
@@ -115,7 +125,7 @@ Customer-Spend-Forecaster/
 ├── README.md               # Project documentation
 ├── assets/                 # Architecture diagrams, SHAP plots, and UI screenshots
 │   ├── dashboard.png
-│   ├── shap_plot.jpg
+│   ├── shap_plot.png
 │   ├── architecture.png
 │   └── demo.gif
 ├── models/                 # Serialized .joblib files (XGBoost, K-Means, Scaler)
