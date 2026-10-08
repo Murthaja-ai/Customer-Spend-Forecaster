@@ -24,7 +24,7 @@ Financial institutions sit on terabytes of transactional data but typically rely
 
 Banks and marketing teams can use this AI engine to:
 *   **Identify high-value customers** hidden within raw transaction logs.
-*   **Forecast future customer spending** using 6-month predictive trajectories.
+*   **Forecast future customer spending** using a predicted 6-month spending ratio and estimated future spend.
 *   **Trigger proactive retention campaigns** before a customer officially churns.
 *   **Segment customers** for highly personalized, cost-efficient marketing.
 *   **Improve revenue forecasting** by moving beyond simple historical averages.
@@ -35,10 +35,10 @@ Banks and marketing teams can use this AI engine to:
 
 ![Architecture](assets/architecture.png)
 
-This project demonstrates a complete, production-ready Data Science lifecycle:
+This project demonstrates an end-to-end Data Science and Machine Learning lifecycle:
 
 ### 1. Data Engineering & Leakage Prevention
-*   **Temporal Splitting:** To simulate a real-world forecasting environment and prevent data leakage, the dataset was strictly split chronologically. The **Observation Window** (2019) was used exclusively for feature engineering, and the **Target Window** (Jan-Jun 2020) was used to define future behavior.
+*   **Temporal Feature/Target Design:** To simulate a real-world forecasting environment and prevent temporal leakage, features were derived exclusively from 2019 transaction history, while the target represents customer spending during the Jan-Jun 2020 target period. For predictive evaluation, customers were split into an 80/20 training/testing hold-out, with 5-fold cross-validation performed on the training set.
 *   **RFM Feature Engineering:** Converted 1.29 million raw transaction rows into distinct customer profiles using Recency, Frequency, and Monetary metrics (e.g., *Spend Volatility*, *Average Transaction Gap*). Demographic bias (age, gender) was deliberately removed to ensure legally compliant, behavior-only predictions.
 
 ### 2. Behavioral Segmentation (K-Means)
@@ -59,22 +59,26 @@ Using **K-Means Clustering** (validated via Silhouette Scores and PCA dimensiona
 Trained an **XGBoost Regression** model to predict future spending momentum. Instead of predicting absolute future dollars (which artificially biases the model toward wealthy users), the model targets the **Logarithmic Growth Ratio**. This normalizes the baseline, allowing the AI to successfully flag a millionaire dropping their spend by 50% alongside a college student growing their spend by 200%.
 
 | Model | CV MAE (Log Space) | Test MAE (Growth Ratio Error) | Test R² |
-| :--- | :--- | :--- | :--- |
+| :--- | :---: | :---: | :---: |
 | Linear Regression | 0.1154 | 0.0460 | 0.0935 |
-| Random Forest | 0.1084 | 0.0452 | 0.1255 |
-| **XGBoost** | **0.1129** | **0.0454** | **0.1425** |
+| Random Forest | **0.1084** | **0.0453** | 0.1228 |
+| **XGBoost** | 0.1129 | 0.0454 | **0.1425** |
 
-*Note: While the pandemic compressed the total variance (yielding a modest R²), the XGBoost model achieved a highly accurate Test Mean Absolute Error (MAE) of ~4.5%, proving its capability for precise directional forecasting.*
+*Note: The target shows relatively limited variance, resulting in modest R² values. The models nevertheless outperform a naive mean predictor on the held-out test set. Random Forest achieves the lowest Test MAE (0.0453), while XGBoost achieves the highest Test R² (0.1425).*
+
+### Naive Baseline
+
+A naive mean predictor was used as a benchmark. On the held-out test set, the mean predictor achieved a Test MAE of **0.04768**, compared with **0.0453** for Random Forest and **0.0454** for XGBoost. Its Test R² was approximately **0.000**, establishing that the trained models provide predictive signal beyond simply predicting the average growth ratio.
 
 ---
 
 ## 🔍 Explainable AI (SHAP)
 
-Model interpretability is important in financial decision support systems. **SHAP (SHapley Additive exPlanations)** was integrated to explain how individual features influence model predictions, proving that the model relies on sound financial realities rather than arbitrary noise.
+Model interpretability is important in financial decision support systems. **SHAP (SHapley Additive exPlanations)** was integrated to explain how individual features contribute to model predictions and to improve model transparency.
 
 ![SHAP Summary](assets/shap_plot.png)
 
-**Key Insights:** *Spend Volatility (Standard Deviation)* and *Transaction Frequency* emerged as the strongest mathematical drivers for future spending behavior, proving that erratic spenders are the highest flight risks.
+**Key Insights:** *Spend Volatility (Standard Deviation)* and *Transaction Frequency* emerged as important contributors to the model's predictions. These findings can help identify customer groups whose spending behavior may warrant closer monitoring.
 
 ---
 
@@ -88,7 +92,7 @@ The pipeline is deployed via a **Streamlit** web application, bridging the gap b
     *   🚨 **< 0.95 (Decline):** Triggers immediate Retention Marketing.
     *   📈 **> 1.05 (Growth):** Triggers Premium Upgrade Offers.
     *   ⚖️ **Stable:** Recommends continued engagement monitoring.
-*   **Enterprise Scalability:** Features a dual-tab architecture to support both single-customer deep dives for relationship managers and bulk CSV uploads for enterprise marketing batch processing.
+*   **Scalable Interface:** Features a dual-tab architecture supporting single-customer analysis and CSV upload workflows, with batch prediction functionality planned as a future enhancement.
 
 ---
 
